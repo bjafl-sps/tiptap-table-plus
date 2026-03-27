@@ -1,5 +1,6 @@
 import { Node } from "@tiptap/pm/model";
 import { Editor } from "@tiptap/core";
+import { tableStyle } from "../utilities/renderStyle";
 export class TablePlusNodeView {
   node: Node;
   getPos: () => number | undefined;
@@ -16,7 +17,7 @@ export class TablePlusNodeView {
     node: Node,
     getPos: () => number | undefined,
     editor: Editor,
-    options: any
+    options: any,
   ) {
     this.node = node;
     this.columnSize = node.attrs.columnSize;
@@ -40,11 +41,11 @@ export class TablePlusNodeView {
     this.contentDOM = document.createElement("table");
     this.contentDOM.classList.add("table-plus");
     this.contentDOM.style.flex = "1"; // allow child nodes to expand if needed
+    Object.assign(this.contentDOM.style, tableStyle(node.attrs));
     this.dom.appendChild(this.contentDOM);
   }
 
   addHandles() {
-
     const dragHandle = (handle: HTMLElement) => {
       let startX = 0;
       let handleIndex = parseInt(handle.dataset.index ?? "0");
@@ -56,29 +57,41 @@ export class TablePlusNodeView {
         let percent = Math.min(Math.max((x / rect.width) * 100, 0), 100);
 
         if (handleIndex > 0) {
-          let previousPixel = (parseFloat(this.handles[handleIndex - 1].style.left) * x / percent) + this.options.minColumnSize;
-          if(x < previousPixel) {
-            percent = Math.min(Math.max((previousPixel / rect.width) * 100, 0), 100);
+          let previousPixel =
+            (parseFloat(this.handles[handleIndex - 1].style.left) * x) /
+              percent +
+            this.options.minColumnSize;
+          if (x < previousPixel) {
+            percent = Math.min(
+              Math.max((previousPixel / rect.width) * 100, 0),
+              100,
+            );
           }
           percent = Math.max(
             percent,
-            parseFloat(this.handles[handleIndex - 1].style.left)
+            parseFloat(this.handles[handleIndex - 1].style.left),
           );
         }
         if (handleIndex < this.handles.length - 1) {
-          let nextPixel = (parseFloat(this.handles[handleIndex + 1].style.left) * x / percent) - this.options.minColumnSize;
-          if(x > nextPixel) {
-            percent = Math.min(Math.max((nextPixel / rect.width) * 100, 0), 100);
+          let nextPixel =
+            (parseFloat(this.handles[handleIndex + 1].style.left) * x) /
+              percent -
+            this.options.minColumnSize;
+          if (x > nextPixel) {
+            percent = Math.min(
+              Math.max((nextPixel / rect.width) * 100, 0),
+              100,
+            );
           }
-          
+
           percent = Math.min(
             percent,
-            parseFloat(this.handles[handleIndex + 1].style.left)
+            parseFloat(this.handles[handleIndex + 1].style.left),
           );
         }
 
         handle.style.left = percent + "%";
-        
+
         this.updateValues(this.getColumnSizes(this.handles), false);
       };
 
@@ -123,7 +136,7 @@ export class TablePlusNodeView {
   }
 
   removeHandles() {
-    if(this.handles.length > this.cellPercentage.length) {
+    if (this.handles.length > this.cellPercentage.length) {
       const handle = this.handles[this.handles.length - 1];
       if (!handle) return;
 
@@ -132,7 +145,7 @@ export class TablePlusNodeView {
       this.handles.splice(this.handles.length - 1, 1);
 
       this.handles.forEach((h, i) => {
-          h.dataset.index = i.toString();
+        h.dataset.index = i.toString();
       });
     }
   }
@@ -181,7 +194,7 @@ export class TablePlusNodeView {
       const arr: string[] = columnSize.split(",").map((str) => str.trim());
 
       const numbers: number[] = arr.every(
-        (item) => item !== "" && !isNaN(Number(item))
+        (item) => item !== "" && !isNaN(Number(item)),
       )
         ? arr.map(Number)
         : [];
@@ -191,23 +204,23 @@ export class TablePlusNodeView {
     this.dom.style.setProperty("--cell-count", this.maxCellCount.toString());
 
     this.cellPercentage = Array(this.maxCellCount).fill(
-      Math.floor(100 / this.maxCellCount)
+      Math.floor(100 / this.maxCellCount),
     );
     const columnSize = getColumnSizeList(this.columnSize);
-    if(columnSize.length == this.maxCellCount) {
+    if (columnSize.length == this.maxCellCount) {
       this.cellPercentage = columnSize;
     }
 
     this.dom.style.setProperty(
       "--cell-percentage",
-      this.cellPercentage.map((a) => `${a}%`).join(" ")
+      this.cellPercentage.map((a) => `${a}%`).join(" "),
     );
     this.updateHandles();
   }
 
   getColumnSizes(handles: HTMLElement[]) {
     const values = handles.map(
-      (h) => Math.round(parseFloat(h.style.left) * 100) / 100
+      (h) => Math.round(parseFloat(h.style.left) * 100) / 100,
     );
     let counted = 0;
     let _values = [];
@@ -221,7 +234,7 @@ export class TablePlusNodeView {
   updateValues(_values: number[], updateNode: boolean = false) {
     this.dom.style.setProperty(
       "--cell-percentage",
-      _values.map((a) => `${a}%`).join(" ")
+      _values.map((a) => `${a}%`).join(" "),
     );
     if (updateNode) {
       this.editor.commands.command(({ tr }) => {

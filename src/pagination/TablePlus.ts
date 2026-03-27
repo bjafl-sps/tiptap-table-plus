@@ -18,6 +18,12 @@ import {
   getColumnSizeList,
 } from "../utilities/utils";
 import { Node } from "@tiptap/pm/model";
+import {
+  widthAttr,
+  backgroundColorAttr,
+  borderAttrs,
+} from "../utilities/attributes";
+import { tableStyle } from "../utilities/renderStyle";
 
 export interface TablePlusOptions extends Partial<TipTapTableOptions> {
   resizeHandleStyle?: Partial<CSSStyleDeclaration>;
@@ -46,15 +52,12 @@ export const TablePlus = TipTapTable.extend<TablePlusOptions>({
       columnSize: {
         default: "",
         parseHTML: (element) => {
-          let columnSize = element.getAttribute("data-column-size") || "";
-          let columnSizeList = columnSize.split(",");
+          const columnSize = element.getAttribute("data-column-size") || "";
+          const columnSizeList = columnSize.split(",");
           const isAllNumber = columnSizeList.every(
             (a: string) => !isNaN(Number(a)),
           );
-          if (!isAllNumber) {
-            columnSizeList = [];
-          }
-          return columnSizeList.join(",");
+          return isAllNumber ? columnSizeList.join(",") : "";
         },
         renderHTML: (attributes) => {
           return {
@@ -62,15 +65,27 @@ export const TablePlus = TipTapTable.extend<TablePlusOptions>({
           };
         },
       },
+      width: widthAttr(false),
+      backgroundColor: backgroundColorAttr(false),
+      borderCollapse: {
+        default: "collapse",
+        keepOnSplit: false,
+        parseHTML: (el) => el.style.getPropertyValue("border-collapse") || null,
+        renderHTML: ({ borderCollapse }) =>
+          borderCollapse ? { style: `border-collapse: ${borderCollapse}` } : {},
+      },
+      ...borderAttrs(false),
     };
   },
   renderHTML({ node, HTMLAttributes }) {
     const table: DOMOutputSpec = [
       "table",
-      mergeAttributes(this.options.HTMLAttributes!, HTMLAttributes, {
-        //TODO: can HTMLAttributes be undefined?
-        border: 1,
-      }),
+      mergeAttributes(
+        this.options.HTMLAttributes ?? {},
+        HTMLAttributes,
+        { border: 1 },
+        tableStyle(node.attrs),
+      ),
       0,
     ];
     return table;
